@@ -29,8 +29,16 @@ query ($page: Int, $perPage: Int) {
       genres
       tags {
         name
+        rank  # Tag relevance ranking (out of 100) if available
       }
+      averageScore
+      popularity
       description(asHtml: false)
+      rankings {
+        rank
+        type
+        context
+      }
     }
   }
 }
@@ -40,7 +48,7 @@ CHECKPOINT_FILE = "checkpoint.txt"
 
 def init_global_db(db_path="anilist_global.db"):
     """
-    Initializes a separate SQLite database for global AniList data.
+    Initializes a separate SQLite database for global AniList data with extended fields.
     """
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -53,7 +61,10 @@ def init_global_db(db_path="anilist_global.db"):
             episodes INTEGER,
             description TEXT,
             genres TEXT,
-            tags TEXT
+            tags TEXT,
+            average_score INTEGER,
+            popularity INTEGER,
+            rankings TEXT
         )
     ''')
     conn.commit()
@@ -79,7 +90,8 @@ def fetch_global_data(page, per_page=50):
 
 def store_global_data(data, conn):
     """
-    Parses the global AniList data and stores it in the database.
+    Parses the global AniList data and stores it in the database with additional fields.
+    Uses an upsert (ON CONFLICT) so that if a record already exists, it will be updated.
     """
     cursor = conn.cursor()
     page_data = data.get('data', {}).get('Page', {})
@@ -87,11 +99,6 @@ def store_global_data(data, conn):
     
     for media in media_list:
         media_id = media.get('id')
-        # Check if media is already stored
-        cursor.execute('SELECT id FROM global_media WHERE id=?', (media_id,))
-        if cursor.fetchone():
-            continue  # Skip if already exists
-
         title = media.get('title', {})
         title_romaji = title.get('romaji')
         title_english = title.get('english')
@@ -99,19 +106,35 @@ def store_global_data(data, conn):
         episodes = media.get('episodes')
         description = media.get('description')
         genres = media.get('genres', [])
+        average_score = media.get('averageScore')
+        popularity = media.get('popularity')
+        rankings = media.get('rankings', [])
         
-        # Extract tag names
+        # Store full tag info (name and rank) as JSON for flexibility
         tags_list = media.get('tags', [])
-        tags = [tag.get('name') for tag in tags_list if tag.get('name')]
-        
-        # Store genres and tags as JSON strings for flexibility
+        tags_json = json.dumps(tags_list)
         genres_json = json.dumps(genres)
-        tags_json = json.dumps(tags)
+        rankings_json = json.dumps(rankings)
         
         cursor.execute('''
-            INSERT INTO global_media (id, title_romaji, title_english, title_native, episodes, description, genres, tags)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (media_id, title_romaji, title_english, title_native, episodes, description, genres_json, tags_json))
+            INSERT INTO global_media 
+            (id, title_romaji, title_english, title_native, episodes, description, genres, tags, average_score, popularity, rankings)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                title_romaji=excluded.title_romaji,
+                title_english=excluded.title_english,
+                title_native=excluded.title_native,
+                episodes=excluded.episodes,
+                description=excluded.description,
+                genres=excluded.genres,
+                tags=excluded.tags,
+                average_score=excluded.average_score,
+                popularity=excluded.popularity,
+                rankings=excluded.rankings
+        ''', (
+            media_id, title_romaji, title_english, title_native, episodes, description,
+            genres_json, tags_json, average_score, popularity, rankings_json
+        ))
     
     conn.commit()
     return page_data.get('pageInfo', {})

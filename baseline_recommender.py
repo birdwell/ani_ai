@@ -32,7 +32,12 @@ def get_user_preferences(personal_db_path="anilist_data.db"):
         for genre in genres:
             preference[genre] = preference.get(genre, 0) + score
         for tag in tags:
-            preference[tag] = preference.get(tag, 0) + score
+            # If tag is a dictionary, extract its "name"; if it's a string, use it directly.
+            if isinstance(tag, dict):
+                tag_name = tag.get("name", "")
+            else:
+                tag_name = tag
+            preference[tag_name] = preference.get(tag_name, 0) + score
     return preference
 
 def get_global_media(global_db_path="anilist_global.db"):
@@ -73,7 +78,6 @@ def get_user_planned_media_ids(personal_db_path="anilist_data.db"):
     results = cursor.fetchall()
     conn.close()
     planned_ids = {row[0] for row in results}
-    # print("Planned IDs:", planned_ids)  # Debug print
     return planned_ids
 
 def get_user_watched_media_ids(personal_db_path="anilist_data.db"):
@@ -92,22 +96,43 @@ def get_user_watched_media_ids(personal_db_path="anilist_data.db"):
 
 def compute_similarity(media, preference):
     """
-    Computes a simple similarity score between a media item and the user's preferences.
-    The score is the sum of weights for matching genres and tags.
+    Computes a similarity score between a media item and the user's preferences.
+    Now includes adjustments for average score, popularity, and tag relevance.
     """
     score = 0
+
+    # Base score from matching genres
     for genre in media["genres"]:
         if genre in preference:
             score += preference[genre]
+
+    # Process each tag, handling both dictionaries and strings.
     for tag in media["tags"]:
-        if tag in preference:
-            score += preference[tag]
+        if isinstance(tag, dict):
+            tag_name = tag.get("name", "")
+            tag_rank = tag.get("rank", 1)  # Fallback rank if not provided
+        else:
+            tag_name = tag
+            tag_rank = 1
+        if tag_name in preference:
+            # Scale the weight by tag_rank (adjust the factor as needed)
+            score += preference[tag_name] * (tag_rank / 100.0)
+    
+    # Incorporate average score (example: add a fraction of the average score)
+    average_score = media.get("average_score") or 0
+    score += average_score * 0.1  # Adjust the multiplier as needed
+
+    # Incorporate popularity as a normalized boost (example normalization)
+    popularity = media.get("popularity") or 0
+    score += (popularity / 1000000.0)  # Adjust as needed
+
     return score
 
 def recommend_top_media(top_n=10, desired_genre=None):
     """
     Computes and returns the top N recommendations based on similarity scores.
-    If a desired_genre is provided, media items that contain that genre (or tag) are boosted.
+    If a desired_genre is provided, only media items that actually include that genre (or tag)
+    are considered, and their similarity score is boosted.
     Additionally, if a media item is in the user's planned list, its score is boosted.
     """
     preference = get_user_preferences()
@@ -120,12 +145,20 @@ def recommend_top_media(top_n=10, desired_genre=None):
         # Skip media that the user has already engaged with (excluding planned)
         if media["id"] in watched_ids:
             continue
+
+        # If a desired genre is provided, filter out media that don't include it
+        if desired_genre:
+            genres_lower = [g.lower() for g in media["genres"]]
+            tags_lower = [tag.get("name", "").lower() if isinstance(tag, dict) else tag.lower() for tag in media["tags"]]
+            if desired_genre.lower() not in genres_lower and desired_genre.lower() not in tags_lower:
+                continue
+
         sim = compute_similarity(media, preference)
         
+        # If a desired genre is provided and found, apply a boost
         if desired_genre:
-            # Boost the score if the desired genre is present (case-insensitive)
             genres_lower = [g.lower() for g in media["genres"]]
-            tags_lower = [t.lower() for t in media["tags"]]
+            tags_lower = [tag.get("name", "").lower() if isinstance(tag, dict) else tag.lower() for tag in media["tags"]]
             if desired_genre.lower() in genres_lower:
                 sim *= 1.2  # boost factor for genres
             elif desired_genre.lower() in tags_lower:
