@@ -1,77 +1,80 @@
-Below is an example of how you can set up your repository with a README.md, a .gitignore file, and a requirements.txt file. This setup assumes your project includes at least the following files:
-• baseline_recommender.py – Contains your recommendation logic.
-• api.py – Your FastAPI application.
-• (Other files like your SQLite database files and checkpoint file.)
-
-You can customize the following examples as needed.
-
-README.md
-
 # Ani_AI
 
-Ani_AI is a personal recommendation engine for anime based on your AniList data. It ingests your personal lists (e.g., COMPLETED, PLANNING) and global AniList data to produce recommendations. The project includes:
+Ani_AI is a personalized anime recommendation engine powered by your AniList data. It analyzes your watching history and preferences to generate tailored anime recommendations, leveraging both your personal lists and the global AniList database.
 
-- A baseline recommender (`baseline_recommender.py`) that scores shows based on your watched (or rated) anime and boosts planned shows.
-- A FastAPI server (`api.py`) that exposes the recommendations via an HTTP API.
-- A global data ingestion script (not shown here) that caches all AniList shows into a local SQLite database.
+## Core Components
+
+- `baseline_recommender.py`: Core recommendation engine that analyzes your anime history and generates personalized scores
+- `api.py`: FastAPI-based REST API server for accessing recommendations
+- `global_ingest.py`: Data ingestion script that maintains a local cache of AniList data
 
 ## Features
 
-- **User Preference Extraction:** Uses your completed anime data to build a weighted profile of your genre/tag preferences.
-- **Content-based Recommendation:** Scores global anime based on similarity to your preferences.
-- **Planned List Boost:** Boosts the score of shows in your `PLANNING` list.
-- **Genre Filtering:** Optionally filter recommendations by a desired genre.
-- **API Interface:** Access your recommendations through a REST API built with FastAPI.
+- **Smart Preference Analysis**: Builds your taste profile based on your completed and rated anime
+- **Personalized Scoring**: Ranks anime based on your unique preferences in genres, tags, and themes
+- **Planning List Integration**: Automatically prioritizes shows from your Planning list
+- **Genre-Based Filtering**: Filter recommendations by specific genres
+- **Fast API Access**: Get recommendations quickly through a modern REST API
+- **Local Data Caching**: Maintains an efficient local database to avoid API rate limits
 
 ## Prerequisites
 
-- Python 3.7 or higher
+- Python 3.7+
 - Git
+- AniList account (for accessing your anime list data)
 
-## Installation
+## Quick Start
 
-1. **Clone the Repository:**
-
+1. **Clone and Setup**
 ```bash
+# Clone the repository
 git clone https://github.com/yourusername/ani_ai.git
 cd ani_ai
-```
 
-2. Create a Virtual Environment:
-
-```bash
+# Create and activate virtual environment
 python -m venv venv
-source venv/bin/activate   # On Windows: venv\Scripts\activate
+# For Unix/macOS:
+source venv/bin/activate
+# For Windows:
+.\venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-3. Install Dependencies:
+2. **Run the Recommender**
+```bash
+# CLI Mode
+python baseline_recommender.py
 
-`pip install -r requirements.txt`
+# API Server Mode
+uvicorn api:app --reload
+```
 
-4. Running the Application
+The API documentation will be available at http://localhost:8000/docs
 
-Running the Baseline Recommender (CLI)
+## Project Structure
 
-You can run the recommender directly from the command line:
+- `baseline_recommender.py`: Core recommendation algorithm and CLI interface
+- `api.py`: FastAPI server implementation with recommendation endpoints
+- `global_ingest.py`: AniList data ingestion and caching system
+- `requirements.txt`: Project dependencies
+- `anilist_global.db`: Local SQLite cache of AniList data (created on first run)
 
-`python baseline_recommender.py`
+## API Usage Example
 
-Follow the prompt to optionally enter a genre filter.
+```python
+import requests
 
-5. Running the API Server
+# Get recommendations
+response = requests.get('http://localhost:8000/recommendations')
+recommendations = response.json()
 
-The API is built with FastAPI. To run it with auto-reload during development:
+# Get recommendations filtered by genre
+response = requests.get('http://localhost:8000/recommendations?genre=Action')
+action_recommendations = response.json()
+```
 
-`uvicorn api:app --reload`
+## Data Updates
 
-Then, navigate to http://localhost:8000/docs in your browser to view the interactive API documentation.
-
-Files and Directories
-• baseline_recommender.py – Script that computes recommendations.
-• api.py – FastAPI server exposing recommendation endpoints.
-• requirements.txt – Lists all Python dependencies.
-• .gitignore – Specifies files and directories to ignore (e.g., virtual environments, SQLite databases).
-
-6. Updating Global Data
-
-The project includes a separate ingestion script (not shown here) to import global AniList data into anilist_global.db. This cache helps avoid rate limiting when generating recommendations.
+The system automatically maintains a local cache of AniList data to ensure fast recommendation generation and avoid API rate limits. The cache is updated periodically when running the recommender or API server.
