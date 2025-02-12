@@ -3,11 +3,11 @@
 def compute_quality_score(info: dict) -> float:
     """
     Computes a quality score from the anime's metadata.
-    
     - Normalizes average_score (0 to 1) and popularity (assumes 1,000,000 as high).
     - For TV shows, multiplies the base quality by 1.5 and adds a bonus based on TV ranking.
     - For movies, uses a multiplier of 1.0.
-    - For other formats (OVA, TV SHORT, ONA, SPECIAL), uses a multiplier of 0.5.
+    - For other formats (OVA, ONA, SPECIAL), uses a multiplier of 0.5.
+    - For TV_SHORT, uses a very low multiplier (0.1) so they are unlikely to rank high.
     
     Ranking bonus for TV: bonus = max(0, (100 - rank) / 100)
     """
@@ -32,11 +32,19 @@ def compute_quality_score(info: dict) -> float:
                     if rank_value and isinstance(rank_value, int) and rank_value > 0:
                         bonus = max(bonus, (100 - rank_value) / 100.0)
         return base_quality * quality_multiplier + bonus
+
     elif fmt == "MOVIE":
-        quality_multiplier = 1.0
+        quality_multiplier = 1.0  # Movies get baseline treatment.
         return base_quality * quality_multiplier
-    elif fmt in {"OVA", "TV SHORT", "ONA", "SPECIAL"}:
-        quality_multiplier = 0.5
+
+    elif fmt in {"OVA", "ONA", "SPECIAL"}:
+        quality_multiplier = 0.5  # Penalize these formats moderately.
         return base_quality * quality_multiplier
+
+    elif fmt == "TV_SHORT":
+        quality_multiplier = 0.1  # Heavily penalize TV shorts.
+        return base_quality * quality_multiplier
+
     else:
+        # If format is unknown, just return the base quality.
         return base_quality
