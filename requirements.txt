@@ -1,0 +1,4 @@
+requests
+requests-oauthlib
+fastapi
+uvicorn

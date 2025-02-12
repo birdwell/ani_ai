@@ -1,0 +1,25 @@
+---
+
+### .gitignore
+
+Create a file named `.gitignore` in your project root with the following content to ignore temporary and environment-specific files:
+
+```gitignore
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# SQLite database files (adjust if you want to track these)
+anilist_data.db
+anilist_global.db
+checkpoint.txt
+
+# OS generated files
+.DS_Store
+Thumbs.db
