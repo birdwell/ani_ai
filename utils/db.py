@@ -1,13 +1,8 @@
 # utils/db.py
 import sqlite3
 import json
-import pickle
 
 def load_global_anime_info(db_path="anilist_global.db"):
-    """
-    Loads global metadata including quality fields, genres, rankings, and format.
-    Returns a dictionary mapping anime_id to a dictionary.
-    """
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     query = """
@@ -28,7 +23,6 @@ def load_global_anime_info(db_path="anilist_global.db"):
             rankings = json.loads(row[7]) if row[7] else []
         except Exception:
             rankings = []
-        format_val = row[8] if row[8] else ""
         anime_info[anime_id] = {
             "title_english": row[1],
             "title_romaji": row[2],
@@ -37,10 +31,11 @@ def load_global_anime_info(db_path="anilist_global.db"):
             "popularity": row[5],
             "genres": genres,
             "rankings": rankings,
-            "format": format_val
+            "format": row[8] if row[8] else ""
         }
     return anime_info
 
 def load_embeddings_cache(embeddings_file="embeddings_cache.pkl"):
+    import pickle
     with open(embeddings_file, "rb") as f:
         return pickle.load(f)
