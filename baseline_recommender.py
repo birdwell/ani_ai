@@ -173,6 +173,20 @@ def recommend_top_media(top_n=10, desired_genre=None):
     recommendations.sort(key=lambda x: x[1], reverse=True)
     return recommendations[:top_n]
 
+def normalize_recommendations(recommendations):
+    """
+    Normalizes the raw similarity scores so that the highest score is mapped to 100%.
+    """
+    if not recommendations:
+        return []
+    
+    max_score = max(score for _, score in recommendations)
+    normalized = []
+    for media, score in recommendations:
+        confidence = (score / max_score) * 100  # Scale to percentage
+        normalized.append((media, confidence))
+    return normalized
+
 def main():
     desired_genre = input("Enter a genre filter (or press enter to skip): ").strip()
     if desired_genre == "":

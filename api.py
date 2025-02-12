@@ -2,16 +2,12 @@ from fastapi import FastAPI, Query
 from typing import Optional, List
 from pydantic import BaseModel
 import uvicorn
+from baseline_recommender import recommend_top_media, normalize_recommendations
 
-# Import the recommendation function from your recommender module.
-# If both files are in the same directory, you can use:
-from baseline_recommender import recommend_top_media
-
-# Define a response model for clarity.
 class Recommendation(BaseModel):
     id: int
     title: str
-    similarity_score: float
+    confidence: float
 
 app = FastAPI(title="AniList Recommender API")
 
@@ -20,13 +16,13 @@ def get_recommendations(
     desired_genre: Optional[str] = Query(None, description="Filter recommendations by a desired genre"),
     top_n: int = Query(10, description="Number of recommendations to return")
 ):
-    recommendations = recommend_top_media(top_n=top_n, desired_genre=desired_genre)
+    raw_recommendations = recommend_top_media(top_n=top_n, desired_genre=desired_genre)
+    normalized_recs = normalize_recommendations(raw_recommendations)
     response = []
-    for media, score in recommendations:
+    for media, confidence in normalized_recs:
         title = media.get("title_english") or media.get("title_romaji") or media.get("title_native")
-        response.append(Recommendation(id=media["id"], title=title, similarity_score=score))
+        response.append(Recommendation(id=media["id"], title=title, confidence=confidence))
     return response
 
 if __name__ == "__main__":
-    # Run the API with uvicorn on port 8000
     uvicorn.run(app, host="0.0.0.0", port=8000)
