@@ -2,3 +2,10 @@ requests
 requests-oauthlib
 fastapi
 uvicorn
+sentence-transformers 
+numpy
+pydantic
+googletrans
+google
+typing
+google-generativeai

@@ -1,27 +1,23 @@
 # Ani_AI
 
-Ani_AI is a personalized anime recommendation engine powered by your AniList data. It analyzes your watching history and preferences to generate tailored anime recommendations, leveraging both your personal lists and the global AniList database.
+Ani_AI is a sophisticated anime recommendation engine powered by your AniList data. It combines traditional content-based filtering with advanced AI features to deliver highly personalized anime recommendations. The system analyzes your watching history, preferences, and natural language queries to suggest anime that truly match your interests.
 
-## Core Components
-
-- `baseline_recommender.py`: Core recommendation engine that analyzes your anime history and generates personalized scores
-- `api.py`: FastAPI-based REST API server for accessing recommendations
-- `global_ingest.py`: Data ingestion script that maintains a local cache of AniList data
-
-## Features
+## Core Features
 
 - **Smart Preference Analysis**: Builds your taste profile based on your completed and rated anime
-- **Personalized Scoring**: Ranks anime based on your unique preferences in genres, tags, and themes
+- **AI-Powered Search**: Uses Gemini AI for natural language understanding and semantic search
+- **Embedding-Based Recommendations**: Leverages sentence transformers for deep content understanding
+- **Multi-Language Support**: Handles queries and content in multiple languages
+- **Quality-Aware Scoring**: Considers popularity, ratings, and community feedback
 - **Planning List Integration**: Automatically prioritizes shows from your Planning list
-- **Genre-Based Filtering**: Filter recommendations by specific genres
 - **Fast API Access**: Get recommendations quickly through a modern REST API
-- **Local Data Caching**: Maintains an efficient local database to avoid API rate limits
 
 ## Prerequisites
 
 - Python 3.7+
 - Git
-- AniList account (for accessing your anime list data)
+- AniList account
+- Google Cloud API key (for Gemini AI features)
 
 ## Quick Start
 
@@ -42,39 +38,76 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-2. **Run the Recommender**
+2. **Configure Environment**
+- Set up your Google Cloud API key for Gemini AI features
+- Ensure your AniList account is properly configured
+
+3. **Run the System**
 ```bash
-# CLI Mode
+# Generate embeddings (first time setup)
+python generate_embeddings.py
+
+# Run the baseline recommender (CLI)
 python baseline_recommender.py
 
-# API Server Mode
-uvicorn api:app --reload
+# Start the API server
+uvicorn main:app --reload
 ```
 
 The API documentation will be available at http://localhost:8000/docs
 
 ## Project Structure
 
-- `baseline_recommender.py`: Core recommendation algorithm and CLI interface
-- `api.py`: FastAPI server implementation with recommendation endpoints
-- `global_ingest.py`: AniList data ingestion and caching system
-- `requirements.txt`: Project dependencies
-- `anilist_global.db`: Local SQLite cache of AniList data (created on first run)
+### Core Components
+- `main.py`: FastAPI application entry point
+- `baseline_recommender.py`: Traditional content-based recommendation engine
+- `generate_embeddings.py`: Creates and caches anime embeddings
+- `gemini_utils.py`: Gemini AI integration utilities
 
-## API Usage Example
+### Routers
+- `routers/`
+  - `recommendations.py`: Recommendation endpoints
+  - `query.py`: Natural language query processing
+
+### Utils
+- `utils/`
+  - `db.py`: Database operations and management
+  - `quality.py`: Anime quality scoring utilities
+  - `titles.py`: Title processing and normalization
+
+### Data Management
+- `ingest/`: Data ingestion and format management
+- `migrate_db.py`: Database schema migration utilities
+
+## API Usage Examples
 
 ```python
 import requests
 
-# Get recommendations
+# Get basic recommendations
 response = requests.get('http://localhost:8000/recommendations')
 recommendations = response.json()
 
-# Get recommendations filtered by genre
-response = requests.get('http://localhost:8000/recommendations?genre=Action')
+# Natural language query
+response = requests.get(
+    'http://localhost:8000/query',
+    params={'q': 'Show me some psychological thrillers like Death Note'}
+)
+recommendations = response.json()
+
+# Get recommendations with specific genre
+response = requests.get(
+    'http://localhost:8000/recommendations',
+    params={'genre': 'Action'}
+)
 action_recommendations = response.json()
 ```
 
-## Data Updates
+## Data Management
 
-The system automatically maintains a local cache of AniList data to ensure fast recommendation generation and avoid API rate limits. The cache is updated periodically when running the recommender or API server.
+The system uses several data stores:
+- `anilist_global.db`: Global anime database cache
+- `anilist_data.db`: Personal anime list data
+- `embeddings_cache.pkl`: Cached anime embeddings for fast similarity search
+
+Data is automatically maintained and updated to ensure fresh recommendations while respecting API rate limits.
