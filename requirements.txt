@@ -151,10 +151,14 @@ pydantic-core==2.27.2
     # via pydantic
 pyparsing==3.2.1
     # via httplib2
+python-dotenv==1.0.1
+    # via -r requirements.in
 pyyaml==6.0.2
     # via
     #   huggingface-hub
     #   transformers
+rapidfuzz==3.12.1
+    # via -r requirements.in
 regex==2024.11.6
     # via transformers
 requests==2.32.3
