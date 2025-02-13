@@ -1,10 +1,18 @@
 import sqlite3
 import json
 
+import sqlite3
+import json
+
+def transform_rating(score):
+    if score < 7:
+        return 0
+    return score - 6  # Mapping: 7->1, 8->2, 9->3, 10->4
+
 def get_user_preferences(personal_db_path="anilist_data.db"):
     """
     Extracts user preferences by reading completed shows (with ratings) from the personal database.
-    Builds a weighted dictionary based on genres and tags.
+    Builds a weighted dictionary based on genres and tags, with ratings transformed to emphasize good shows.
     """
     conn = sqlite3.connect(personal_db_path)
     cursor = conn.cursor()
@@ -20,6 +28,7 @@ def get_user_preferences(personal_db_path="anilist_data.db"):
     
     preference = {}
     for genres_json, tags_json, score in results:
+        weight = transform_rating(score)
         try:
             genres = json.loads(genres_json) if genres_json else []
         except Exception:
@@ -28,16 +37,15 @@ def get_user_preferences(personal_db_path="anilist_data.db"):
             tags = json.loads(tags_json) if tags_json else []
         except Exception:
             tags = []
-        # Use the score as a weight for the genres and tags
+        # Use the transformed weight
         for genre in genres:
-            preference[genre] = preference.get(genre, 0) + score
+            preference[genre] = preference.get(genre, 0) + weight
         for tag in tags:
-            # If tag is a dictionary, extract its "name"; if it's a string, use it directly.
             if isinstance(tag, dict):
                 tag_name = tag.get("name", "")
             else:
                 tag_name = tag
-            preference[tag_name] = preference.get(tag_name, 0) + score
+            preference[tag_name] = preference.get(tag_name, 0) + weight
     return preference
 
 def get_global_media(global_db_path="anilist_global.db"):
@@ -97,34 +105,39 @@ def get_user_watched_media_ids(personal_db_path="anilist_data.db"):
 def compute_similarity(media, preference):
     """
     Computes a similarity score between a media item and the user's preferences.
-    Now includes adjustments for average score, popularity, and tag relevance.
+    Incorporates:
+      - Matching genres (weighted by the accumulated user score)
+      - Matching tags weighted by the tag's rank (importance)
+      - A fraction of the average score
+      - A normalized boost from popularity
     """
-    score = 0
+    score = 0.0
 
-    # Base score from matching genres
-    for genre in media["genres"]:
+    # Base score from matching genres.
+    for genre in media.get("genres", []):
         if genre in preference:
             score += preference[genre]
-
-    # Process each tag, handling both dictionaries and strings.
-    for tag in media["tags"]:
+    
+    # Process each tag, handling both dictionary and string representations.
+    for tag in media.get("tags", []):
         if isinstance(tag, dict):
             tag_name = tag.get("name", "")
-            tag_rank = tag.get("rank", 1)  # Fallback rank if not provided
+            tag_rank = tag.get("rank", 1)  # Default to 1 if no rank is provided.
         else:
             tag_name = tag
             tag_rank = 1
         if tag_name in preference:
-            # Scale the weight by tag_rank (adjust the factor as needed)
-            score += preference[tag_name] * (tag_rank / 100.0)
+            # Now, give a boost based on tag rank:
+            # For example, a tag with rank 100 contributes 2x its base weight.
+            score += preference[tag_name] * (1 + tag_rank / 100.0)
     
-    # Incorporate average score (example: add a fraction of the average score)
+    # Incorporate average score (e.g., add a fraction of the average score).
     average_score = media.get("average_score") or 0
-    score += average_score * 0.1  # Adjust the multiplier as needed
+    score += average_score * 0.1  # Adjust multiplier as needed.
 
-    # Incorporate popularity as a normalized boost (example normalization)
+    # Incorporate popularity as a normalized boost.
     popularity = media.get("popularity") or 0
-    score += (popularity / 1000000.0)  # Adjust as needed
+    score += popularity / 1000000.0  # Adjust as needed.
 
     return score
 

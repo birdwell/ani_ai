@@ -5,7 +5,12 @@ meta {
 }
 
 get {
-  url: http://localhost:8000/recommendations
+  url: http://localhost:8000/recommendations?top_n=5
   body: none
   auth: none
+}
+
+params:query {
+  top_n: 5
+  ~desired_genre: isekai
 }

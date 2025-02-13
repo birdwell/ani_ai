@@ -15,6 +15,9 @@ venv/
 env/
 ENV/
 
+# Environment files
+.env
+
 # SQLite database files (adjust if you want to track these)
 anilist_data.db
 anilist_global.db

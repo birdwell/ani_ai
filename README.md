@@ -19,6 +19,38 @@ Ani_AI is a sophisticated anime recommendation engine powered by your AniList da
 - AniList account
 - Google Cloud API key (for Gemini AI features)
 
+## Dependency Management
+
+This project uses `pip-tools` for dependency management. Here's how to work with dependencies:
+
+1. **Install pip-tools**
+```bash
+pip install pip-tools
+```
+
+2. **Add New Dependencies**
+- Add new packages to `requirements.in`
+- Run `pip-compile` to generate `requirements.txt`:
+```bash
+pip-compile requirements.in
+```
+
+3. **Install Dependencies**
+```bash
+pip-sync requirements.txt
+```
+
+4. **Update Dependencies**
+```bash
+# Update all dependencies to their latest versions
+pip-compile --upgrade requirements.in
+
+# Update specific packages
+pip-compile --upgrade-package package_name requirements.in
+```
+
+> Note: Always use `pip-sync` instead of `pip install -r requirements.txt` to ensure your environment exactly matches the requirements.
+
 ## Quick Start
 
 1. **Clone and Setup**
@@ -41,6 +73,23 @@ pip install -r requirements.txt
 2. **Configure Environment**
 - Set up your Google Cloud API key for Gemini AI features
 - Ensure your AniList account is properly configured
+
+## Environment Setup
+
+1. **API Keys and Secrets**
+```bash
+# Copy the example env file
+cp .env.example .env
+
+# Edit .env and add your actual API keys
+nano .env
+```
+
+Required environment variables:
+- `GEMINI_API_KEY`: Your Google Gemini AI key
+- `ANILIST_CLIENT_ID`: Your AniList application client ID
+- `ANILIST_CLIENT_SECRET`: Your AniList application client secret
+- `ANILIST_REDIRECT_URI`: Your Anilist application redirect URI
 
 3. **Run the System**
 ```bash

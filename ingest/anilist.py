@@ -1,20 +1,26 @@
 import os
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-
+from dotenv import load_dotenv
 import requests
 import sqlite3
 import json
 import webbrowser
 from requests_oauthlib import OAuth2Session
 
+# Load environment variables
+load_dotenv()
+
 # --------------------------
 # Configuration / Constants
 # --------------------------
 
 # Replace these with your actual AniList application credentials.
-CLIENT_ID = '24327'
-CLIENT_SECRET = 'Xz0Llw1TrFFR4OiGRoqALuDhV8TnEKId9N0BPnqK'
-REDIRECT_URI = 'http://localhost:8000/callback'
+CLIENT_ID = os.environ.get('ANILIST_CLIENT_ID')
+CLIENT_SECRET = os.environ.get('ANILIST_CLIENT_SECRET')
+REDIRECT_URI = os.environ.get('ANILIST_REDIRECT_URI')
+
+if not all([CLIENT_ID, CLIENT_SECRET, REDIRECT_URI]):
+    raise ValueError("Missing AniList credentials. Please check your .env file.")
 
 # AniList OAuth2 endpoints
 AUTHORIZATION_BASE_URL = 'https://anilist.co/api/v2/oauth/authorize'

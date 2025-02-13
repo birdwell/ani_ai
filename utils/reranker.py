@@ -1,9 +1,17 @@
 # utils/reranker.py
-from google import genai
+import google.generativeai as genai
 import json
+import os
+from dotenv import load_dotenv
 
-# Configure Gemini API with your API key.
-client = genai.Client(api_key="AIzaSyBaQ4nuea3UMJvJJdRTw97bFR3_-brs4hM")  # Replace with your actual API key.
+# Load environment variables from .env file
+load_dotenv()
+
+# Configure Gemini API with your API key from an environment variable
+gemini_key = os.environ.get("GEMINI_API_KEY")
+if gemini_key is None:
+    raise ValueError("GEMINI_API_KEY environment variable not set")
+genai.configure(api_key=gemini_key)
 
 def rerank_candidates_with_gemini(query: str, candidates: list) -> list:
     """
@@ -29,11 +37,10 @@ def rerank_candidates_with_gemini(query: str, candidates: list) -> list:
         f"{candidates_text}\n\n"
         "Return your answer as valid JSON with a single key 'candidate_ids' mapping to an array of anime IDs in the desired order."
     )
-    
-    response = client.models.generate_content(
-        model="gemini-1.5-flash-8b",
-        contents=prompt,
-        config={"response_mime_type": "application/json"}
+
+    model = genai.GenerativeModel(model_name="gemini-1.5-flash-8b")
+    response = model.generate_content(
+        contents=prompt
     )
     
     # Debug: print raw response.
