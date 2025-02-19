@@ -11,3 +11,4 @@ typing
 google-generativeai
 faiss-cpu
 python-dotenv
+rapidfuzz
