@@ -14,7 +14,7 @@ Ani_AI is a sophisticated anime recommendation engine powered by your AniList da
 
 ## Prerequisites
 
-- Python 3.7+
+- Python 3.13.2+
 - Git
 - AniList account
 - Google Cloud API key (for Gemini AI features)
