@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Query
 from typing import Optional, List
 from pydantic import BaseModel
-from baseline_recommender import recommend_top_media, normalize_recommendations
+from core.recommender.baseline_recommender import recommend_top_media, normalize_recommendations
 from utils.titles import get_english_title
 from utils.db import load_global_anime_info
 

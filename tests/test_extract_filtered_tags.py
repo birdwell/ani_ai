@@ -1,6 +1,6 @@
 import unittest
 import json
-from build_faiss_index import extract_filtered_tags
+from core.search.build_faiss_index import extract_filtered_tags
 
 class TestExtractFilteredTags(unittest.TestCase):
 

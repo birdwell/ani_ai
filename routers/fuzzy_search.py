@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 import sqlite3
-from rapidfuzz import process, fuzz, utils
+from rapidfuzz import process, fuzz
 from functools import lru_cache
 
 router = APIRouter()
