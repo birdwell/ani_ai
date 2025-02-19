@@ -23,7 +23,16 @@ def get_all_titles() -> list:
         rows = cursor.fetchall()
         conn.close()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail={
+                'error': str(e),
+                'type': type(e).__name__,
+                'module': type(e).__module__
+            }
+        ) from e
+    finally:
+        conn.close()
     
     titles = []
     for row in rows:
@@ -37,9 +46,9 @@ def get_all_titles() -> list:
     description="Search for anime titles using fuzzy string matching. Returns top N matches sorted by similarity score.",
     response_description="List of matched anime titles with their similarity scores")
 def fuzzy(
-    q: str = Query(..., description="Query string to fuzzy-match against titles", min_length=1),
-    limit: int = Query(10, description="Number of results to return"),
-    min_score: float = Query(45, description="Minimum fuzzy score threshold")
+    q: str = Query(..., description="Query string to fuzzy-match against titles", min_length=1, max_length=200),
+    limit: int = Query(10, description="Number of results to return", gt=0),
+    min_score: float = Query(45, description="Minimum fuzzy score threshold", ge=0, le=100),
 ):
     # Retrieve cached titles: list of (id, title)
     candidates = get_all_titles()
